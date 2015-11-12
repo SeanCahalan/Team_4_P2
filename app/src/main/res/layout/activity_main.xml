@@ -30,7 +30,8 @@
             android:id="@+id/btnSpeak"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@null" />
+            android:background="@null"
+            android:src="@android:drawable/ic_menu_add" />
 
         <TextView
             android:layout_width="wrap_content"

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Team 4 P2</string>
+    <string name="tap_on_mic">Tap on mic string</string>
 </resources>

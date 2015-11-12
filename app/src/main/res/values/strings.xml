@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Team 4 P2</string>
     <string name="tap_on_mic">Tap on mic string</string>
+    <string name="speech_prompt">speech prompt string</string>
+    <string name="speech_not_supported">speech not supported string</string>
 </resources>

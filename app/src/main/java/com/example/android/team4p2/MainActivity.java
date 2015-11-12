@@ -3,6 +3,7 @@ package com.example.android.team4p2;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -29,7 +30,10 @@ public class MainActivity extends Activity {
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
 
         // hide the action bar
-        getActionBar().hide();
+        ActionBar ab = getActionBar();
+        if (ab != null) {
+            ab.hide();
+        }
 
         btnSpeak.setOnClickListener(new View.OnClickListener() {
 
@@ -80,5 +84,14 @@ public class MainActivity extends Activity {
 
         }
     }
+
+    /*
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+    */
 
 }

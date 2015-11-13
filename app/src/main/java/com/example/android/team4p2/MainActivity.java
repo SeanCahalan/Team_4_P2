@@ -39,7 +39,6 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                txtSpeechInput.setText("SHIT HAPPENED");
                 promptSpeechInput();
             }
         });
@@ -59,6 +58,7 @@ public class MainActivity extends Activity {
         try {
             startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
         } catch (ActivityNotFoundException a) {
+            txtSpeechInput.setText("The voice recognition service could not run.");
             Toast.makeText(getApplicationContext(),
                     getString(R.string.speech_not_supported),
                     Toast.LENGTH_SHORT).show();
@@ -75,10 +75,10 @@ public class MainActivity extends Activity {
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
                 if (resultCode == RESULT_OK && null != data) {
-
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    txtSpeechInput.setText(result.get(0));
+                    String text = result.get(0);
+                    txtSpeechInput.setText(text);
                 }
                 break;
             }

@@ -3,4 +3,5 @@
     <string name="tap_on_mic">Tap on mic string</string>
     <string name="speech_prompt">speech prompt string</string>
     <string name="speech_not_supported">speech not supported string</string>
+    <string name="command_not_found">Command not found</string>
 </resources>

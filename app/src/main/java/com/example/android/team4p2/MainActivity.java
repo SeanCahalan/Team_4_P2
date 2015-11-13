@@ -23,6 +23,8 @@ public class MainActivity extends Activity {
     private ImageButton btnSpeak;
     private final int REQ_CODE_SPEECH_INPUT = 100;
 
+    public final static String USER_INPUT = "com.example.android.team4p2.USER_INPUT";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,7 +102,13 @@ public class MainActivity extends Activity {
         keywordMap.put("make", "make");
         keywordMap.put("create", "make");
         keywordMap.put("add", "make");
+        keywordMap.put("contacts", "contact");
+        keywordMap.put("contact", "contact");
+        keywordMap.put("note", "note");
+        keywordMap.put("alarm", "alarm");
     }
+
+    private static final String[] categories = {"contact", "note", "alarm"};
 
     private String keywordConvert(String str) {
         return keywordMap.get(str);
@@ -114,6 +122,51 @@ public class MainActivity extends Activity {
      */
     private void handleInput(String user_input) {
 
+        // Check the Google Drive file to see the relevant command for the homepage state
+
+        String[] user_input_list = user_input.split(" ");
+        String well_formed_user_input = "";
+        Boolean flag = false;
+        String chosen_category = null;
+        for (String word: user_input_list) {
+            String well_formed_word = keywordConvert(word);
+            well_formed_user_input = well_formed_user_input.concat(well_formed_word + " ");
+            for (String category: categories) {
+                if (category.equals(well_formed_word)) {
+                    flag = true;
+                    chosen_category = category;
+                }
+            }
+        }
+
+        well_formed_user_input = well_formed_user_input.trim();
+        if (flag) {
+            launchActivity(chosen_category, well_formed_user_input);
+        } else {
+            Toast.makeText(getApplicationContext(),
+                getString(R.string.command_not_found),
+                Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void launchActivity(String category, String user_input) {
+        Intent intent;
+        switch (category) {
+            case "contact":
+                intent = new Intent(this, ContactsActivity.class);
+                break;
+            case "note":
+                intent = new Intent(this, NotesActivity.class);
+                break;
+            case "alarm":
+                intent = new Intent(this, AlarmsActivity.class);
+                break;
+            default:
+                throw new Error("This shouldn't happen. An invalid category was passed " +
+                        "to launchActivity");
+        }
+        intent.putExtra(USER_INPUT, user_input);
+        startActivity(intent);
     }
 
     /*

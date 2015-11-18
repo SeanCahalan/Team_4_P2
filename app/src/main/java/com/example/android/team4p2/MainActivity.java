@@ -19,7 +19,7 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
-    private TextView txtSpeechInput;
+
     private ImageButton btnSpeak;
     private final int REQ_CODE_SPEECH_INPUT = 100;
 
@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        txtSpeechInput = (TextView) findViewById(R.id.txtSpeechInput);
+
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
 
         // hide the action bar
@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
         try {
             startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
         } catch (ActivityNotFoundException a) {
-            txtSpeechInput.setText("The voice recognition service could not run.");
+
             Toast.makeText(getApplicationContext(),
                     getString(R.string.speech_not_supported),
                     Toast.LENGTH_SHORT).show();
@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     String text = result.get(0);
                     handleInput(text);
-                    txtSpeechInput.setText(text);
+
                 }
                 break;
             }

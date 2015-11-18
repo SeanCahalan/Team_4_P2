@@ -1,5 +1,6 @@
 package com.example.android.team4p2;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -21,7 +22,7 @@ public class MainActivity extends Activity {
 
 
     private ImageButton btnSpeak;
-    private final int REQ_CODE_SPEECH_INPUT = 100;
+    public final static int REQ_CODE_SPEECH_INPUT = 100;
 
     public final static String USER_INPUT = "com.example.android.team4p2.USER_INPUT";
 
@@ -105,6 +106,7 @@ public class MainActivity extends Activity {
         keywordMap.put("contacts", "contact");
         keywordMap.put("contact", "contact");
         keywordMap.put("note", "note");
+        keywordMap.put("notes", "note");
         keywordMap.put("alarm", "alarm");
     }
 

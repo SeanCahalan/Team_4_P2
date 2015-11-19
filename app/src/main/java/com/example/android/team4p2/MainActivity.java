@@ -96,24 +96,41 @@ public class MainActivity extends Activity {
      *  We create a hash map to map synonyms to a single word that will be interpreted by our
      *  command interpreter.
      */
-    private static final Map<String, String> keywordMap;
+    public static final Map<String, String> keywordMap;
     static
     {
         keywordMap = new HashMap<String, String>();
         keywordMap.put("make", "make");
         keywordMap.put("create", "make");
         keywordMap.put("add", "make");
+        keywordMap.put("new", "new");
         keywordMap.put("contacts", "contact");
         keywordMap.put("contact", "contact");
         keywordMap.put("note", "note");
         keywordMap.put("notes", "note");
         keywordMap.put("alarm", "alarm");
+        keywordMap.put("help", "help");
+        keywordMap.put("delete", "delete");
+        keywordMap.put("remove", "delete");
     }
 
     private static final String[] categories = {"contact", "note", "alarm"};
 
-    private String keywordConvert(String str) {
+    private static String keywordConvert(String str) {
         return keywordMap.get(str);
+    }
+
+    public static String normalizeCommand(String command) {
+        String[] user_input_list = command.split(" ");
+        String well_formed_user_input = "";
+        Boolean flag = false;
+        String chosen_category = null;
+        for (String word: user_input_list) {
+            String well_formed_word = keywordConvert(word);
+            if (well_formed_word != null)
+                well_formed_user_input = well_formed_user_input.concat(well_formed_word + " ");
+        }
+        return well_formed_user_input.trim();
     }
 
     /*
@@ -124,7 +141,7 @@ public class MainActivity extends Activity {
      */
     private void handleInput(String user_input) {
 
-        // Check the Google Drive file to see the relevant command for the homepage state
+        // Check the Google Drive file to see the relevant commands for the homepage state
 
         String[] user_input_list = user_input.split(" ");
         String well_formed_user_input = "";
@@ -140,7 +157,6 @@ public class MainActivity extends Activity {
                 }
             }
         }
-
         well_formed_user_input = well_formed_user_input.trim();
         if (flag) {
             launchActivity(chosen_category, well_formed_user_input);
@@ -169,6 +185,14 @@ public class MainActivity extends Activity {
         }
         intent.putExtra(USER_INPUT, user_input);
         startActivity(intent);
+    }
+
+    public static Boolean sentenceContainsWord(String sentence, String word_to_match) {
+        String[] sentence_arr = sentence.split(" ");
+        for (String word: sentence_arr) {
+            if (word.equals(word_to_match)) return true;
+        }
+        return false;
     }
 
     /*

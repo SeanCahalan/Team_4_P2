@@ -4,15 +4,13 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
-import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.provider.Contacts;
 import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
@@ -31,7 +29,13 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
     private ImageButton btnSpeak;
     private TextToSpeech tts;
     private String text;
-    private Button btn;
+    private String available_commands = "";
+    private static final String[] commands = {"make", "help", "delete"};
+
+    // We use global variables for the async stuff because I can't Java
+    private String CURRENT_PROCESS = "DEFAULT";
+    private String contact_name = "";
+    private String contact_phone = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +47,8 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
         btnSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                say("Please say a command.");
+                while(tts.isSpeaking()){}
                 promptSpeechInput();
             }
         });
@@ -54,7 +60,7 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
         // Code here using the user input from the main activity if need be...
 
         tts = new TextToSpeech(this, this);
-        btn = (Button) findViewById(R.id.btn);
+        Button btn = (Button) findViewById(R.id.btn);
 
         // This is a button to playback the string right now. Eventually this needs
         // to be replaced with voice commands.
@@ -67,30 +73,47 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                 say("Added " + text + " to contacts.");
             }
         });
+
+        // Set up `available_commands` for help command
+        for (String command: commands) {
+            available_commands = available_commands.concat(command + ", ");
+        }
+        available_commands = available_commands.trim();
+        available_commands = available_commands.substring(0, available_commands.length());
     }
 
     /*
      *  This is the "top" of the process, where we begin to interpret the commands.
      */
     private void handleCommand() {
-        // use the variable `text` in this function to process commands.
-
-
-    }
-
-    private void promptSpeechInput() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
-        try {
-            startActivityForResult(intent, MainActivity.REQ_CODE_SPEECH_INPUT);
-        } catch (ActivityNotFoundException a) {
-            Toast.makeText(getApplicationContext(),
-                    getString(R.string.speech_not_supported),
-                    Toast.LENGTH_SHORT).show();
+        // At this point a command has been issued and stored in the variable `text`
+        String nText = MainActivity.normalizeCommand(text);
+        String command = extractCommand(nText);
+        switch (command) {
+            case "delete": {
+                CURRENT_PROCESS = "contact-delete-name";
+                say("Please say the name of the contact.");
+                while(tts.isSpeaking()){}
+                promptSpeechInput();
+                break;
+            }
+            case "ERROR": {
+                say("That command is not valid. Say \"help\" to list available commands");
+                while(tts.isSpeaking()){}
+                return;
+            }
+            case "make": {
+                CURRENT_PROCESS = "contact-name";
+                say("Please say the name of the contact.");
+                while(tts.isSpeaking()){}
+                promptSpeechInput();
+                break;
+            }
+            case "help": {
+                say("The available commands are " + available_commands + ".");
+                while(tts.isSpeaking()){}
+                break;
+            }
         }
     }
 
@@ -107,7 +130,45 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     text = result.get(0);
-                    handleCommand();
+
+                    /*
+                     *  I don't know how to do this without callbacks, and I can't use callbacks
+                     *  because Java.
+                     */
+                    switch (CURRENT_PROCESS) {
+                        case "contact-name": {
+                            contact_name = text;
+                            CURRENT_PROCESS = "contact-phone"; // Set the next process
+                            say("Please say the phone number of the contact.");
+                            while(tts.isSpeaking()){}
+                            promptSpeechInput();
+                            break;
+                        }
+                        case "contact-phone": {
+                            contact_phone = text;
+                            CURRENT_PROCESS = "add-contact"; // Set the next process
+                            promptSpeechInput();
+                            break;
+                        }
+                        case "add-contact": {
+                            CURRENT_PROCESS = null; // Set the next process
+                            addContact(contact_name, "junk@email.com", contact_phone);
+                            say("Successfully added " + contact_name + " to contacts.");
+                            while(tts.isSpeaking()){}
+                            break;
+                        }
+                        case "contact-delete-name": {
+                            CURRENT_PROCESS = null;
+                            deleteContact(text);
+                            say("Hopefully deleted " + text + " from contacts.");
+                            while(tts.isSpeaking()){}
+                            break;
+                        }
+                        default: {
+                            handleCommand();
+                            break;
+                        }
+                    }
                 }
                 break;
             }
@@ -142,6 +203,31 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
 
     private void say(String str) {
         tts.speak(str, TextToSpeech.QUEUE_FLUSH, null, "asdfsdfsd");
+    }
+
+    private String extractCommand(String user_sentence) {
+        for (String command: commands) {
+            if (MainActivity.sentenceContainsWord(user_sentence, command)) {
+                return command;
+            }
+        }
+        return "ERROR";
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, MainActivity.REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void addContact(String name, String email, String phone) {
@@ -244,6 +330,44 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             e.printStackTrace();
         } catch (OperationApplicationException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    // Please Jesus
+    public void deleteContact(String name) {
+
+        String id = "";
+
+        ContentResolver contentResolver = getApplicationContext().getContentResolver();
+        Uri uri = ContactsContract.Data.CONTENT_URI;
+        String[] projection = new String[] { ContactsContract.PhoneLookup._ID };
+        String selection = ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME + " = ?";
+        String[] selectionArguments = { name };
+        Cursor cursor = contentResolver.query(uri, projection, selection, selectionArguments, null);
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                id = cursor.getString(0);
+            }
+        }
+
+        final ArrayList ops = new ArrayList();
+        final ContentResolver cr = getContentResolver();
+        ops.add(ContentProviderOperation
+                .newDelete(ContactsContract.RawContacts.CONTENT_URI)
+                .withSelection(
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID
+                                + " = ?",
+                        new String[] { id })
+                .build());
+
+        try {
+            ContentProviderResult[] res = getContentResolver().applyBatch(
+                    ContactsContract.AUTHORITY, ops);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (OperationApplicationException e) {
             e.printStackTrace();
         }
     }

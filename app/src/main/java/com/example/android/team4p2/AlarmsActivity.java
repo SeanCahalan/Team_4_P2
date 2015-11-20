@@ -16,5 +16,7 @@ public class AlarmsActivity extends AppCompatActivity {
         String user_input = intent.getStringExtra(MainActivity.USER_INPUT);
 
         // Code here...
+
+
     }
 }

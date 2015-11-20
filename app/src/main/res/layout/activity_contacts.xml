@@ -12,10 +12,18 @@
 
     <ImageButton
         android:id="@+id/btnSpeak"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
         android:background="@null"
-        android:src="@drawable/mic" />
+        android:src="@drawable/mic"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:contentDescription="mic"
+        android:adjustViewBounds="false"
+        android:cropToPadding="false"
+        android:focusable="false"
+
+        android:scaleType="fitCenter"></ImageButton>
 
     <Button
         android:id="@+id/btn"

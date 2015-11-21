@@ -22,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class ContactsActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
@@ -48,7 +49,6 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             @Override
             public void onClick(View v) {
                 say("Please say a command.");
-                while(tts.isSpeaking()){}
                 promptSpeechInput();
             }
         });
@@ -69,7 +69,6 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             public void onClick(View arg0) {
                 speakOut();
                 addContact(text, "adolf@fake.com", "6131234567");
-                while (tts.isSpeaking()) {}
                 say("Added " + text + " to contacts.");
             }
         });
@@ -93,25 +92,21 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             case "delete": {
                 CURRENT_PROCESS = "contact-delete-name";
                 say("Please say the name of the contact.");
-                while(tts.isSpeaking()){}
                 promptSpeechInput();
                 break;
             }
             case "ERROR": {
                 say("That command is not valid. Say \"help\" to list available commands");
-                while(tts.isSpeaking()){}
                 return;
             }
             case "make": {
                 CURRENT_PROCESS = "contact-name";
                 say("Please say the name of the contact.");
-                while(tts.isSpeaking()){}
                 promptSpeechInput();
                 break;
             }
             case "help": {
                 say("The available commands are " + available_commands + ".");
-                while(tts.isSpeaking()){}
                 break;
             }
         }
@@ -140,7 +135,6 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                             contact_name = text;
                             CURRENT_PROCESS = "contact-phone"; // Set the next process
                             say("Please say the phone number of the contact.");
-                            while(tts.isSpeaking()){}
                             promptSpeechInput();
                             break;
                         }
@@ -154,14 +148,12 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                             CURRENT_PROCESS = null; // Set the next process
                             addContact(contact_name, "junk@email.com", contact_phone);
                             say("Successfully added " + contact_name + " to contacts.");
-                            while(tts.isSpeaking()){}
                             break;
                         }
                         case "contact-delete-name": {
                             CURRENT_PROCESS = null;
                             deleteContact(text);
                             say("Hopefully deleted " + text + " from contacts.");
-                            while(tts.isSpeaking()){}
                             break;
                         }
                         default: {
@@ -203,6 +195,7 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
 
     private void say(String str) {
         tts.speak(str, TextToSpeech.QUEUE_FLUSH, null, "asdfsdfsd");
+        while(tts.isSpeaking()){}
     }
 
     private String extractCommand(String user_sentence) {
@@ -334,41 +327,33 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
         }
     }
 
-    // Please Jesus
     public void deleteContact(String name) {
-
-        String id = "";
-
-        ContentResolver contentResolver = getApplicationContext().getContentResolver();
-        Uri uri = ContactsContract.Data.CONTENT_URI;
-        String[] projection = new String[] { ContactsContract.PhoneLookup._ID };
-        String selection = ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME + " = ?";
-        String[] selectionArguments = { name };
-        Cursor cursor = contentResolver.query(uri, projection, selection, selectionArguments, null);
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                id = cursor.getString(0);
+        ContentResolver cr = getContentResolver();
+        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
+                null, null, null, null);
+        if (cur != null) {
+            while (cur.moveToNext()) {
+                String id = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts._ID));
+                String cName = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                Log.d("TROY", cName);
+                if (name.equalsIgnoreCase(cName)) {
+                    ArrayList<ContentProviderOperation> ops =
+                            new ArrayList<ContentProviderOperation>();
+                    ops.add(ContentProviderOperation
+                            .newDelete(ContactsContract.RawContacts.CONTENT_URI)
+                            .withSelection(ContactsContract.RawContacts.CONTACT_ID + "=?", new String[] { id })
+                            .build());
+                    try {
+                        getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    } catch (OperationApplicationException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
-
-        final ArrayList ops = new ArrayList();
-        final ContentResolver cr = getContentResolver();
-        ops.add(ContentProviderOperation
-                .newDelete(ContactsContract.RawContacts.CONTENT_URI)
-                .withSelection(
-                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID
-                                + " = ?",
-                        new String[] { id })
-                .build());
-
-        try {
-            ContentProviderResult[] res = getContentResolver().applyBatch(
-                    ContactsContract.AUTHORITY, ops);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (OperationApplicationException e) {
-            e.printStackTrace();
         }
     }
 }

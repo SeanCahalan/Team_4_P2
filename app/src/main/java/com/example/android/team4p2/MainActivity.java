@@ -112,19 +112,25 @@ public class MainActivity extends Activity {
         keywordMap.put("help", "help");
         keywordMap.put("delete", "delete");
         keywordMap.put("remove", "delete");
+        keywordMap.put("no", "no");
+        keywordMap.put("nope", "no");
+        keywordMap.put("know", "no");
+        keywordMap.put("email", "email");
+        keywordMap.put("job", "job");
+        keywordMap.put("title", "job");
+        keywordMap.put("company", "company");
+        keywordMap.put("name", "name");
     }
 
     private static final String[] categories = {"contact", "note", "alarm"};
 
-    private static String keywordConvert(String str) {
+    public static String keywordConvert(String str) {
         return keywordMap.get(str);
     }
 
     public static String normalizeCommand(String command) {
         String[] user_input_list = command.split(" ");
         String well_formed_user_input = "";
-        Boolean flag = false;
-        String chosen_category = null;
         for (String word: user_input_list) {
             String well_formed_word = keywordConvert(word);
             if (well_formed_word != null)

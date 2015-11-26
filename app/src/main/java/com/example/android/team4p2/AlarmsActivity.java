@@ -1,14 +1,12 @@
 package com.example.android.team4p2;
 
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.ContentProviderOperation;
-import android.content.ContentProviderResult;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.provider.ContactsContract;
@@ -17,12 +15,10 @@ import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 
 public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
@@ -40,7 +36,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private String contact_company = "";
     private String contact_job = "";
     private String contact_email = "";
-    private String contact_organization_selector = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +51,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 promptSpeechInput();
             }
         });
-
-        // Receive the Intent
-        Intent intent = getIntent();
-        String user_input = intent.getStringExtra(MainActivity.USER_INPUT);
-
-        // Code here using the user input from the main activity if need be...
 
         tts = new TextToSpeech(this, this);
 
@@ -162,12 +151,14 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 break;
             }
             case "additional-contact": {
-                String command = MainActivity.keywordConvert(text);
-                if (command == null)
-                    command = text;
+                String command = MainActivity.normalizeCommand(text);
                 if (command.equalsIgnoreCase("no")) {
                     CURRENT_PROCESS = "add-contact";
                     nextProcess();
+                } else if (command.equalsIgnoreCase("yes")) {
+                    CURRENT_PROCESS = "additional-contact";
+                    say("Please say 'done,' 'email,' 'job,' or 'company.'");
+                    promptSpeechInput();
                 } else if (command.equalsIgnoreCase("email")) {
                     CURRENT_PROCESS = "contact-email";
                     say("Please state the email address.");
@@ -182,7 +173,7 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                     promptSpeechInput();
                 } else {
                     CURRENT_PROCESS = "additional-contact";
-                    say("That command was not valid. Please say \"no\", \"email\", \"job\", or \"company.\"");
+                    say("That command was not valid. Please say \"done\", \"email\", \"job\", or \"company.\"");
                     promptSpeechInput();
                 }
                 break;
@@ -196,7 +187,7 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             case "contact-delete-name": {
                 CURRENT_PROCESS = "DEFAULT";
                 deleteContact(text);
-                say("Hopefully deleted " + text + " from contacts.");
+                say("Deleted " + text + " from contacts.");
                 break;
             }
             default: {
@@ -264,7 +255,7 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
 
     private void addContact(String name, String phone, String company, String job, String email) {
 
-        ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
         int rawContactInsertIndex = ops.size();
 
         ops.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
@@ -314,20 +305,15 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 .build());
 
         try {
-            ContentProviderResult[] res = getContentResolver().applyBatch(
-                    ContactsContract.AUTHORITY, ops);
-        } catch (RemoteException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OperationApplicationException e) {
-            // TODO Auto-generated catch block
+            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+        } catch (RemoteException | OperationApplicationException e) {
             e.printStackTrace();
         }
     }
 
     public void deleteContact(String name) {
         ContentResolver cr = getContentResolver();
-        Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
+        @SuppressLint("Recycle") Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
                 null, null, null, null);
         if (cur != null) {
             while (cur.moveToNext()) {
@@ -337,16 +323,14 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                         cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
                 if (name.equalsIgnoreCase(cName)) {
                     ArrayList<ContentProviderOperation> ops =
-                            new ArrayList<ContentProviderOperation>();
+                            new ArrayList<>();
                     ops.add(ContentProviderOperation
                             .newDelete(ContactsContract.RawContacts.CONTENT_URI)
                             .withSelection(ContactsContract.RawContacts.CONTACT_ID + "=?", new String[] { id })
                             .build());
                     try {
                         getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    } catch (OperationApplicationException e) {
+                    } catch (RemoteException | OperationApplicationException e) {
                         e.printStackTrace();
                     }
                 }

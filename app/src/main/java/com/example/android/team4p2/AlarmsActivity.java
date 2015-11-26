@@ -10,7 +10,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -23,8 +22,8 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private static final String[] commands = {"new", "help", "cancel"};
 
     private String CURRENT_PROCESS = "DEFAULT";
-    private String contact_name = ""; //strings or...?
-    private String contact_phone = ""; //strings or..?
+    private String contact_name = "";
+    private String contact_phone = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +41,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
         });
 
 
-
         // Receive the Intent
         Intent intent = getIntent();
         String user_input = intent.getStringExtra(MainActivity.USER_INPUT);
@@ -51,7 +49,7 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
         tts = new TextToSpeech(this, this);
 
         // Set up `available_commands` for help command
-        for (String command: commands) {
+        for (String command : commands) {
             available_commands = available_commands.concat(command + ", ");
         }
         available_commands = available_commands.trim();
@@ -87,7 +85,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     }
 
     // Receiving speech input
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -119,13 +116,13 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                         }
                         case "add-contact": {
                             CURRENT_PROCESS = null; // Set the next process
-                            addContact(contact_name, "junk@email.com", contact_phone);
+                            // addContact(contact_name, "junk@email.com", contact_phone);
                             say("Successfully added " + contact_name + " to contacts.");
                             break;
                         }
                         case "contact-delete-name": {
                             CURRENT_PROCESS = null;
-                            deleteContact(text);
+                             // deleteContact(text);
                             say("Hopefully deleted " + text + " from contacts.");
                             break;
                         }
@@ -139,7 +136,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             }
         }
     }
-
 
 
     @Override
@@ -168,8 +164,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private void speakOut() {
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "aslkjfds");
     }
-
-}
 
     private void say(String str) {
         tts.speak(str, TextToSpeech.QUEUE_FLUSH, null, "asdfsdfsd");
@@ -200,6 +194,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                     Toast.LENGTH_SHORT).show();
         }
     }
-
+}
 //now inserting the make new alarm and cancel alarm functions (reffer to troys code for general practice)
 

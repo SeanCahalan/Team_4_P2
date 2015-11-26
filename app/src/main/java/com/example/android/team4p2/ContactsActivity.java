@@ -162,12 +162,14 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                 break;
             }
             case "additional-contact": {
-                String command = MainActivity.keywordConvert(text);
-                if (command == null)
-                    command = text;
+                String command = MainActivity.normalizeCommand(text);
                 if (command.equalsIgnoreCase("no")) {
                     CURRENT_PROCESS = "add-contact";
                     nextProcess();
+                } else if (command.equalsIgnoreCase("yes")) {
+                    CURRENT_PROCESS = "additional-contact";
+                    say("Please say 'done,' 'email,' 'job,' or 'company.'");
+                    promptSpeechInput();
                 } else if (command.equalsIgnoreCase("email")) {
                     CURRENT_PROCESS = "contact-email";
                     say("Please state the email address.");
@@ -182,7 +184,7 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                     promptSpeechInput();
                 } else {
                     CURRENT_PROCESS = "additional-contact";
-                    say("That command was not valid. Please say \"no\", \"email\", \"job\", or \"company.\"");
+                    say("That command was not valid. Please say \"done\", \"email\", \"job\", or \"company.\"");
                     promptSpeechInput();
                 }
                 break;
@@ -196,7 +198,7 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             case "contact-delete-name": {
                 CURRENT_PROCESS = "DEFAULT";
                 deleteContact(text);
-                say("Hopefully deleted " + text + " from contacts.");
+                say("Deleted " + text + " from contacts.");
                 break;
             }
             default: {

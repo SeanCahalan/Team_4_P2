@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
         keywordMap.put("make", "make");
         keywordMap.put("create", "make");
         keywordMap.put("add", "make");
-        keywordMap.put("new", "new");
+        keywordMap.put("new", "make");
         keywordMap.put("contacts", "contact");
         keywordMap.put("contact", "contact");
         keywordMap.put("note", "note");
@@ -113,6 +113,7 @@ public class MainActivity extends Activity {
         keywordMap.put("delete", "delete");
         keywordMap.put("remove", "delete");
         keywordMap.put("no", "no");
+        keywordMap.put("done", "no");
         keywordMap.put("nope", "no");
         keywordMap.put("know", "no");
         keywordMap.put("email", "email");
@@ -120,12 +121,13 @@ public class MainActivity extends Activity {
         keywordMap.put("title", "job");
         keywordMap.put("company", "company");
         keywordMap.put("name", "name");
+        keywordMap.put("yes", "yes");
     }
 
     private static final String[] categories = {"contact", "note", "alarm"};
 
     public static String keywordConvert(String str) {
-        return keywordMap.get(str);
+        return keywordMap.get(str.toLowerCase());
     }
 
     public static String normalizeCommand(String command) {

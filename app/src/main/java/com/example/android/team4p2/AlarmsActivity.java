@@ -1,15 +1,23 @@
 package com.example.android.team4p2;
 
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
+import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.OperationApplicationException;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.os.RemoteException;
+import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -19,16 +27,20 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private TextToSpeech tts;
     private String text;
     private String available_commands = "";
-    private static final String[] commands = {"new", "help", "cancel"};
+    private static final String[] commands = {"make", "help", "delete"};
 
+    // We use global variables for the async stuff because I can't Java
     private String CURRENT_PROCESS = "DEFAULT";
     private String contact_name = "";
     private String contact_phone = "";
+    private String contact_company = "";
+    private String contact_job = "";
+    private String contact_email = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_alarms);
+        setContentView(R.layout.activity_contacts);
 
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
 
@@ -40,30 +52,27 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             }
         });
 
-
-        // Receive the Intent
-        Intent intent = getIntent();
-        String user_input = intent.getStringExtra(MainActivity.USER_INPUT);
-
-        // Code here using the user input from the main activity (if needed)
         tts = new TextToSpeech(this, this);
 
         // Set up `available_commands` for help command
-        for (String command : commands) {
+        for (String command: commands) {
             available_commands = available_commands.concat(command + ", ");
         }
         available_commands = available_commands.trim();
         available_commands = available_commands.substring(0, available_commands.length());
     }
 
+    /*
+     *  This is the "top" of the process, where we begin to interpret the commands.
+     */
     private void handleCommand() {
         // At this point a command has been issued and stored in the variable `text`
         String nText = MainActivity.normalizeCommand(text);
         String command = extractCommand(nText);
         switch (command) {
-            case "cancel": {
-                CURRENT_PROCESS = "///";
-                say("/////.");
+            case "delete": {
+                CURRENT_PROCESS = "contact-delete-name";
+                say("Please say the name of the contact.");
                 promptSpeechInput();
                 break;
             }
@@ -71,9 +80,9 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 say("That command is not valid. Say \"help\" to list available commands");
                 return;
             }
-            case "new": {
-                CURRENT_PROCESS = "////";
-                say("///.");
+            case "make": {
+                CURRENT_PROCESS = "contact-name";
+                say("Please say the name of the contact.");
                 promptSpeechInput();
                 break;
             }
@@ -84,7 +93,9 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
         }
     }
 
-    // Receiving speech input
+    /**
+     * Receiving speech input
+     **/
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -95,48 +106,96 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                     ArrayList<String> result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     text = result.get(0);
-
-                    /*
-                     *  I don't know how to do this without callbacks, and I can't use callbacks
-                     *  because Java.
-                     */
-                    switch (CURRENT_PROCESS) {
-                        case "contact-name": {
-                            contact_name = text;
-                            CURRENT_PROCESS = "contact-phone"; // Set the next process
-                            say("Please say the phone number of the contact.");
-                            promptSpeechInput();
-                            break;
-                        }
-                        case "contact-phone": {
-                            contact_phone = text;
-                            CURRENT_PROCESS = "add-contact"; // Set the next process
-                            promptSpeechInput();
-                            break;
-                        }
-                        case "add-contact": {
-                            CURRENT_PROCESS = null; // Set the next process
-                            // addContact(contact_name, "junk@email.com", contact_phone);
-                            say("Successfully added " + contact_name + " to contacts.");
-                            break;
-                        }
-                        case "contact-delete-name": {
-                            CURRENT_PROCESS = null;
-                             // deleteContact(text);
-                            say("Hopefully deleted " + text + " from contacts.");
-                            break;
-                        }
-                        default: {
-                            handleCommand();
-                            break;
-                        }
-                    }
+                    nextProcess();
                 }
                 break;
             }
         }
     }
 
+    private void nextProcess() {
+        switch (CURRENT_PROCESS) {
+            case "contact-name": {
+                contact_name = text;
+                CURRENT_PROCESS = "contact-phone";
+                say("Please say the phone number of the contact.");
+                promptSpeechInput();
+                break;
+            }
+            case "contact-phone": {
+                contact_phone = text;
+                CURRENT_PROCESS = "additional-contact";
+                say("Would you like to add additional information?");
+                promptSpeechInput();
+                break;
+            }
+            case "contact-email": {
+                contact_email = text;
+                CURRENT_PROCESS = "additional-contact";
+                say("Would you like to add additional information?");
+                promptSpeechInput();
+                break;
+            }
+            case "contact-job": {
+                contact_job = text;
+                CURRENT_PROCESS = "additional-contact";
+                say("Would you like to add additional information?");
+                promptSpeechInput();
+                break;
+            }
+            case "contact-company": {
+                contact_company = text;
+                CURRENT_PROCESS = "additional-contact";
+                say("Would you like to add additional information?");
+                promptSpeechInput();
+                break;
+            }
+            case "additional-contact": {
+                String command = MainActivity.normalizeCommand(text);
+                if (command.equalsIgnoreCase("no")) {
+                    CURRENT_PROCESS = "add-contact";
+                    nextProcess();
+                } else if (command.equalsIgnoreCase("yes")) {
+                    CURRENT_PROCESS = "additional-contact";
+                    say("Please say 'done,' 'email,' 'job,' or 'company.'");
+                    promptSpeechInput();
+                } else if (command.equalsIgnoreCase("email")) {
+                    CURRENT_PROCESS = "contact-email";
+                    say("Please state the email address.");
+                    promptSpeechInput();
+                } else if (command.equalsIgnoreCase("company")) {
+                    CURRENT_PROCESS = "contact-company";
+                    say("Please state the company name.");
+                    promptSpeechInput();
+                } else if (command.equalsIgnoreCase("job")) {
+                    CURRENT_PROCESS = "contact-job";
+                    say("Please state the job title.");
+                    promptSpeechInput();
+                } else {
+                    CURRENT_PROCESS = "additional-contact";
+                    say("That command was not valid. Please say \"done\", \"email\", \"job\", or \"company.\"");
+                    promptSpeechInput();
+                }
+                break;
+            }
+            case "add-contact": {
+                CURRENT_PROCESS = "DEFAULT"; // Set the next process
+                addContact(contact_name, contact_phone, contact_company, contact_job, contact_email);
+                say("Successfully added " + contact_name + " to contacts.");
+                break;
+            }
+            case "contact-delete-name": {
+                CURRENT_PROCESS = "DEFAULT";
+                deleteContact(text);
+                say("Deleted " + text + " from contacts.");
+                break;
+            }
+            default: {
+                handleCommand();
+                break;
+            }
+        }
+    }
 
     @Override
     public void onInit(int status) {
@@ -149,7 +208,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 speakOut();
             }
         }
-
     }
 
     @Override
@@ -194,6 +252,89 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                     Toast.LENGTH_SHORT).show();
         }
     }
-}
-//now inserting the make new alarm and cancel alarm functions (reffer to troys code for general practice)
 
+    private void addContact(String name, String phone, String company, String job, String email) {
+
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        int rawContactInsertIndex = ops.size();
+
+        ops.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null).build());
+
+        //Phone Number
+        ops.add(ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
+                        rawContactInsertIndex)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, "1").build());
+
+        //Display name/Contact name
+        ops.add(ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
+                        rawContactInsertIndex)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                .build());
+
+        //Email details
+        ops.add(ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
+                        rawContactInsertIndex)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Email.DATA, email)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Email.TYPE, "2").build());
+
+        //Organization details
+        ops.add(ContentProviderOperation
+                .newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
+                        rawContactInsertIndex)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, company)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, job)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Organization.TYPE, "0")
+                .build());
+
+        try {
+            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+        } catch (RemoteException | OperationApplicationException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteContact(String name) {
+        ContentResolver cr = getContentResolver();
+        @SuppressLint("Recycle") Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
+                null, null, null, null);
+        if (cur != null) {
+            while (cur.moveToNext()) {
+                String id = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts._ID));
+                String cName = cur.getString(
+                        cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                if (name.equalsIgnoreCase(cName)) {
+                    ArrayList<ContentProviderOperation> ops =
+                            new ArrayList<>();
+                    ops.add(ContentProviderOperation
+                            .newDelete(ContactsContract.RawContacts.CONTENT_URI)
+                            .withSelection(ContactsContract.RawContacts.CONTACT_ID + "=?", new String[] { id })
+                            .build());
+                    try {
+                        getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+                    } catch (RemoteException | OperationApplicationException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+}

@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
@@ -24,7 +23,7 @@ public class audioService extends Service implements MediaPlayer.OnPreparedListe
     public void onCreate()
     {
         Uri uri = Uri.parse("android.resource://com.example.android.team4p2/" + R.raw.cena);
-        mp = new MediaPlayer(); // .create(this, R.raw.cena);
+        mp = new MediaPlayer();
         try {
             mp.setDataSource(getApplicationContext(), uri);
         } catch (IOException e) {

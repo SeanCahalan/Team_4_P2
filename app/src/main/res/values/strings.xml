@@ -2,5 +2,4 @@
     <string name="app_name">VIPA</string>
     <string name="speech_prompt">Speak after tone</string>
     <string name="speech_not_supported">Speech-to-text is not supported on this phone</string>
-    <string name="command_not_found">Command not found</string>
 </resources>

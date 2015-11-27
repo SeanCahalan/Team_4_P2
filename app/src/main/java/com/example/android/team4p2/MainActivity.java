@@ -1,25 +1,27 @@
 package com.example.android.team4p2;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
 
-
+    private TextToSpeech tts;
     private ImageButton btnSpeak;
-    public final static int REQ_CODE_SPEECH_INPUT = 100;
 
+    public final static int REQ_CODE_SPEECH_INPUT = 100;
     public final static String USER_INPUT = "com.example.android.team4p2.USER_INPUT";
 
     @Override
@@ -27,17 +29,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        tts = new TextToSpeech(this, this);
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
 
-        // hide the action bar
-        ActionBar ab = getActionBar();
-        if (ab != null) {
-            ab.hide();
-        }
-
         btnSpeak.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 promptSpeechInput();
@@ -47,7 +42,7 @@ public class MainActivity extends Activity {
     }
 
     /*
-     * Showing google speech input dialog
+     *  Showing google speech input dialog
      */
     private void promptSpeechInput() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -66,13 +61,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    /**
-     * Receiving speech input
-     * */
+    /*
+     *  Receiving speech input
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         switch (requestCode) {
             case REQ_CODE_SPEECH_INPUT: {
                 if (resultCode == RESULT_OK && null != data) {
@@ -95,7 +89,7 @@ public class MainActivity extends Activity {
     public static final Map<String, String> keywordMap;
     static
     {
-        keywordMap = new HashMap<String, String>();
+        keywordMap = new HashMap<>();
         keywordMap.put("make", "make");
         keywordMap.put("create", "make");
         keywordMap.put("add", "make");
@@ -120,7 +114,6 @@ public class MainActivity extends Activity {
         keywordMap.put("cancel", "cancel");
         keywordMap.put("list", "list");
         keywordMap.put("yes", "yes");
-
     }
 
     private static final String[] categories = {"contact", "note", "alarm"};
@@ -147,9 +140,6 @@ public class MainActivity extends Activity {
      *    2. Interpret the string and call the appropriate Intent.
      */
     private void handleInput(String user_input) {
-
-        // Check the Google Drive file to see the relevant commands for the homepage state
-
         String[] user_input_list = user_input.split(" ");
         String well_formed_user_input = "";
         Boolean flag = false;
@@ -168,9 +158,8 @@ public class MainActivity extends Activity {
         if (flag) {
             launchActivity(chosen_category, well_formed_user_input);
         } else {
-            Toast.makeText(getApplicationContext(),
-                getString(R.string.command_not_found),
-                Toast.LENGTH_SHORT).show();
+            say("That command is not valid. The available commands are 'alarm,' 'contact," +
+                    "' and 'note.'");
         }
     }
 
@@ -202,13 +191,21 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    /*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+    private void say(String str) {
+        tts.speak(str, TextToSpeech.QUEUE_FLUSH, null, "asdfsdfsd");
+        while(tts.isSpeaking()){}
     }
-    */
 
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(Locale.CANADA);
+            if (result == TextToSpeech.LANG_MISSING_DATA ||
+                    result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } else {
+                btnSpeak.setEnabled(true);
+            }
+        }
+    }
 }

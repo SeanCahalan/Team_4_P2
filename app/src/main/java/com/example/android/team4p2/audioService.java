@@ -20,6 +20,7 @@ public class audioService extends Service implements MediaPlayer.OnPreparedListe
         return null;
     }
 
+    @Override
     public void onCreate()
     {
         Uri uri = Uri.parse("android.resource://com.example.android.team4p2/" + R.raw.cena);
@@ -32,6 +33,7 @@ public class audioService extends Service implements MediaPlayer.OnPreparedListe
         mp.setLooping(false);
     }
 
+    @Override
     public void onDestroy()
     {
         if (mp != null) {
@@ -47,7 +49,7 @@ public class audioService extends Service implements MediaPlayer.OnPreparedListe
             mp.prepareAsync();
             return 1; // I don't know why I have to return an int...
         } else {
-            Log.d("TROY", "This shouldn't happen");
+            Log.d("TROY", "This shouldn't happen.");
             return 0;
         }
     }

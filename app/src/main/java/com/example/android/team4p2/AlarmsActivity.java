@@ -7,9 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -245,20 +244,14 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
         br = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                /* Intent playAudioIntent = new Intent();
-                playAudioIntent.setAction("com.example.android.team4p2");
-                String audioURL = Environment.getExternalStorageDirectory() + "/media/audio/CENA.mp3";
-                playAudioIntent.setDataAndType(Uri.parse(audioURL), "audio/*");
-                */
-                audioService as = new audioService();
                 Intent it = new Intent(getApplicationContext(), audioService.class);
                 it.setAction("com.example.android.team4p2");
-                startService(it);
                 Toast.makeText(
                         getApplicationContext(),
                         "JOHHHHHHNNNNNNN CENAAAAAAA",
                         Toast.LENGTH_LONG
                 ).show();
+                startService(it);
             }
         };
         registerReceiver(br, new IntentFilter("com.example.android.team4p2"));

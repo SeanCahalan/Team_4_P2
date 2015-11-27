@@ -205,7 +205,6 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
                 Log.e("TTS", "This Language is not supported");
             } else {
                 btnSpeak.setEnabled(true);
-                speakOut();
             }
         }
     }
@@ -217,10 +216,6 @@ public class ContactsActivity extends AppCompatActivity implements TextToSpeech.
             tts.shutdown();
         }
         super.onDestroy();
-    }
-
-    private void speakOut() {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "aslkjfds");
     }
 
     private void say(String str) {

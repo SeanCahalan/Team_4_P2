@@ -1,15 +1,15 @@
 package com.example.android.team4p2;
 
-import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.content.OperationApplicationException;
-import android.database.Cursor;
+import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.RemoteException;
-import android.provider.ContactsContract;
+import android.os.Environment;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.v7.app.AppCompatActivity;
@@ -17,9 +17,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
+
+import static java.lang.Integer.parseInt;
 
 public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
 
@@ -28,22 +33,20 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private String text;
     private String available_commands = "";
     private static final String[] commands = {"make", "help", "delete"};
-
-    // We use global variables for the async stuff because I can't Java
     private String CURRENT_PROCESS = "DEFAULT";
-    private String contact_name = "";
-    private String contact_phone = "";
-    private String contact_company = "";
-    private String contact_job = "";
-    private String contact_email = "";
+
+    PendingIntent pi;
+    BroadcastReceiver br;
+    AlarmManager am;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_contacts);
+        setContentView(R.layout.activity_alarms);
+
+        setup();
 
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
-
         btnSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -81,8 +84,8 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 return;
             }
             case "make": {
-                CURRENT_PROCESS = "contact-name";
-                say("Please say the name of the contact.");
+                CURRENT_PROCESS = "alarm-make";
+                say("What time should the alarm be set for?");
                 promptSpeechInput();
                 break;
             }
@@ -115,79 +118,10 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
 
     private void nextProcess() {
         switch (CURRENT_PROCESS) {
-            case "contact-name": {
-                contact_name = text;
-                CURRENT_PROCESS = "contact-phone";
-                say("Please say the phone number of the contact.");
-                promptSpeechInput();
-                break;
-            }
-            case "contact-phone": {
-                contact_phone = text;
-                CURRENT_PROCESS = "additional-contact";
-                say("Would you like to add additional information?");
-                promptSpeechInput();
-                break;
-            }
-            case "contact-email": {
-                contact_email = text;
-                CURRENT_PROCESS = "additional-contact";
-                say("Would you like to add additional information?");
-                promptSpeechInput();
-                break;
-            }
-            case "contact-job": {
-                contact_job = text;
-                CURRENT_PROCESS = "additional-contact";
-                say("Would you like to add additional information?");
-                promptSpeechInput();
-                break;
-            }
-            case "contact-company": {
-                contact_company = text;
-                CURRENT_PROCESS = "additional-contact";
-                say("Would you like to add additional information?");
-                promptSpeechInput();
-                break;
-            }
-            case "additional-contact": {
-                String command = MainActivity.normalizeCommand(text);
-                if (command.equalsIgnoreCase("no")) {
-                    CURRENT_PROCESS = "add-contact";
-                    nextProcess();
-                } else if (command.equalsIgnoreCase("yes")) {
-                    CURRENT_PROCESS = "additional-contact";
-                    say("Please say 'done,' 'email,' 'job,' or 'company.'");
-                    promptSpeechInput();
-                } else if (command.equalsIgnoreCase("email")) {
-                    CURRENT_PROCESS = "contact-email";
-                    say("Please state the email address.");
-                    promptSpeechInput();
-                } else if (command.equalsIgnoreCase("company")) {
-                    CURRENT_PROCESS = "contact-company";
-                    say("Please state the company name.");
-                    promptSpeechInput();
-                } else if (command.equalsIgnoreCase("job")) {
-                    CURRENT_PROCESS = "contact-job";
-                    say("Please state the job title.");
-                    promptSpeechInput();
-                } else {
-                    CURRENT_PROCESS = "additional-contact";
-                    say("That command was not valid. Please say \"done\", \"email\", \"job\", or \"company.\"");
-                    promptSpeechInput();
-                }
-                break;
-            }
-            case "add-contact": {
-                CURRENT_PROCESS = "DEFAULT"; // Set the next process
-                addContact(contact_name, contact_phone, contact_company, contact_job, contact_email);
-                say("Successfully added " + contact_name + " to contacts.");
-                break;
-            }
-            case "contact-delete-name": {
+            case "alarm-make": {
                 CURRENT_PROCESS = "DEFAULT";
-                deleteContact(text);
-                say("Deleted " + text + " from contacts.");
+                addAlarm();
+                say("Successfully added your alarm for " + text);
                 break;
             }
             default: {
@@ -195,6 +129,66 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 break;
             }
         }
+    }
+
+    private void addAlarm() {
+
+        // int current_hour = cal.get(Calendar.HOUR_OF_DAY);
+        int user_hour = getHour(text);
+        // int current_minutes = cal.get(Calendar.MINUTE);
+        int user_minutes = getMinutes(text);
+        // long needed_time = ((24 - Math.abs(user_hour - current_hour) * 60 + (60 - Math.abs(user_minutes - current_minutes)))) * 60 * 1000;
+        // long final_time = System.currentTimeMillis() + needed_time;
+        Boolean user_isPm = getIsPM(text);
+
+        if (user_hour == 12 && !user_isPm)
+            user_hour = 0;
+        else if (user_hour < 12 && user_isPm) {
+            user_hour += 12;
+        }
+
+        Log.d("TROY", "user_hour: " + user_hour);
+        Log.d("TROY", "user_minutes: " + user_minutes);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.CANADA);
+
+        // Initialize a new calendar with the right info (don't pass it anything)
+        Calendar cal = new GregorianCalendar();
+
+        // Set the calendar's time to now
+        cal.setTime(new Date());
+
+        // Calculate the time values we'll need to add to the calendar
+        int hours_to_add = Math.abs(user_hour - cal.get(Calendar.HOUR_OF_DAY));
+        int minutes_to_add = Math.abs(user_minutes - cal.get(Calendar.MINUTE));
+
+        Log.d("TROY", "hours_to_add: " + hours_to_add);
+        Log.d("TROY", "minutes_to_add: " + minutes_to_add);
+
+        // Add them to the calendar
+        cal.add(Calendar.HOUR_OF_DAY, hours_to_add);
+        cal.add(Calendar.MINUTE, minutes_to_add);
+        cal.add(Calendar.SECOND, -cal.get(Calendar.SECOND));
+
+        // Get the new calendar time in milliseconds
+        long final_time = cal.getTimeInMillis();
+        String alarmTime = sdf.format(final_time);
+        Log.d("TROY", alarmTime);
+
+        AlarmManager.AlarmClockInfo alarm_info = new AlarmManager.AlarmClockInfo(final_time, pi);
+        am.setAlarmClock(alarm_info, pi);
+    }
+
+    private int getHour(String date) {
+        return parseInt(date.split(":")[0]);
+    }
+
+    private int getMinutes(String date) {
+        return parseInt(date.split(":")[1].split(" ")[0]);
+    }
+
+    private Boolean getIsPM(String date) {
+        return date.toLowerCase().contains("p");
     }
 
     @Override
@@ -205,7 +199,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 Log.e("TTS", "This Language is not supported");
             } else {
                 btnSpeak.setEnabled(true);
-                speakOut();
             }
         }
     }
@@ -217,10 +210,6 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             tts.shutdown();
         }
         super.onDestroy();
-    }
-
-    private void speakOut() {
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "aslkjfds");
     }
 
     private void say(String str) {
@@ -248,93 +237,32 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             startActivityForResult(intent, MainActivity.REQ_CODE_SPEECH_INPUT);
         } catch (ActivityNotFoundException a) {
             Toast.makeText(getApplicationContext(),
-                    getString(R.string.speech_not_supported),
-                    Toast.LENGTH_SHORT).show();
+                    getString(R.string.speech_not_supported), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void addContact(String name, String phone, String company, String job, String email) {
-
-        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-        int rawContactInsertIndex = ops.size();
-
-        ops.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null).build());
-
-        //Phone Number
-        ops.add(ContentProviderOperation
-                .newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
-                        rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, "1").build());
-
-        //Display name/Contact name
-        ops.add(ContentProviderOperation
-                .newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
-                        rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                .build());
-
-        //Email details
-        ops.add(ContentProviderOperation
-                .newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
-                        rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Email.DATA, email)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Email.TYPE, "2").build());
-
-        //Organization details
-        ops.add(ContentProviderOperation
-                .newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID,
-                        rawContactInsertIndex)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, company)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Organization.TITLE, job)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Organization.TYPE, "0")
-                .build());
-
-        try {
-            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
-        } catch (RemoteException | OperationApplicationException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void deleteContact(String name) {
-        ContentResolver cr = getContentResolver();
-        @SuppressLint("Recycle") Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
-                null, null, null, null);
-        if (cur != null) {
-            while (cur.moveToNext()) {
-                String id = cur.getString(
-                        cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String cName = cur.getString(
-                        cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                if (name.equalsIgnoreCase(cName)) {
-                    ArrayList<ContentProviderOperation> ops =
-                            new ArrayList<>();
-                    ops.add(ContentProviderOperation
-                            .newDelete(ContactsContract.RawContacts.CONTENT_URI)
-                            .withSelection(ContactsContract.RawContacts.CONTACT_ID + "=?", new String[] { id })
-                            .build());
-                    try {
-                        getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
-                    } catch (RemoteException | OperationApplicationException e) {
-                        e.printStackTrace();
-                    }
-                }
+    private void setup() {
+        br = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                /* Intent playAudioIntent = new Intent();
+                playAudioIntent.setAction("com.example.android.team4p2");
+                String audioURL = Environment.getExternalStorageDirectory() + "/media/audio/CENA.mp3";
+                playAudioIntent.setDataAndType(Uri.parse(audioURL), "audio/*");
+                */
+                audioService as = new audioService();
+                Intent it = new Intent(getApplicationContext(), audioService.class);
+                it.setAction("com.example.android.team4p2");
+                startService(it);
+                Toast.makeText(
+                        getApplicationContext(),
+                        "JOHHHHHHNNNNNNN CENAAAAAAA",
+                        Toast.LENGTH_LONG
+                ).show();
             }
-        }
+        };
+        registerReceiver(br, new IntentFilter("com.example.android.team4p2"));
+        pi = PendingIntent.getBroadcast(this, 0, new Intent("com.example.android.team4p2"), 0);
+        am = (AlarmManager) (this.getSystemService(Context.ALARM_SERVICE));
     }
 }

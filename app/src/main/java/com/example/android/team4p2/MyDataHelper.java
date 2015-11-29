@@ -5,9 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
-/**
- * Created by Sean on 11/19/2015.
- */
 public class MyDataHelper extends SQLiteOpenHelper{
 
     public static final int DATABASE_VERSION = 1;
@@ -19,10 +16,10 @@ public class MyDataHelper extends SQLiteOpenHelper{
         public static final String NOTE_COL = "note";
     }
 
-    private static final String CREATE_STR = "CREATE TABLE " +
+    private static final String CREATE_STR = "CREATE TABLE IF NOT EXISTS " +
             DBItem.TABLE + " (" + DBItem._ID +
-            " INTEGER PRIMARY KEY AUTOINCREMENT, " + DBItem.TITLE_COL + " TEXT," +
-            DBItem.NOTE_COL + " TEXT);";
+            " INTEGER PRIMARY KEY AUTOINCREMENT, " + DBItem.TITLE_COL + " TEXT NOT NULL, " +
+            DBItem.NOTE_COL + " TEXT NOT NULL);";
 
     public MyDataHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

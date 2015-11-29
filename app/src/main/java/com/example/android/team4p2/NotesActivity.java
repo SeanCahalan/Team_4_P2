@@ -94,7 +94,9 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 break;
             }
             case "list": {
-
+                CURRENT_PROCESS = "DEFAULT";
+                say("The notes are " + noteMan.getAllNotes() + ".");
+//                say("This is not implemented yet.");
                 break;
             }
         }
@@ -137,7 +139,12 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 break;
             }
             case "note-listen": {
-                say(noteMan.getTheDamnNote(text));
+                String result = noteMan.getTheDamnNote(text);
+                if (result == null) {
+                    say("The note " + text + " is not in the database.");
+                } else {
+                    say(result);
+                }
                 break;
             }
             case "additional-content": {

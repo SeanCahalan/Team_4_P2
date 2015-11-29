@@ -9,9 +9,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Sean on 11/27/2015.
- */
 public class NoteManager {
     private SQLiteOpenHelper noteHelper;
     private SQLiteDatabase noteDB;
@@ -23,13 +20,29 @@ public class NoteManager {
     }
 
     public String getTheDamnNote(String text){
-        String query = "select * from " + "notes" + " where title=\""+ text +"\"";
+        noteDB = noteHelper.getWritableDatabase();
+        String query = "SELECT * FROM notes WHERE title = '" + text + "'";
         Cursor c = noteDB.rawQuery(query, null);
-        int iName = c.getColumnIndex(text);
-        return c.getString(iName);
+        if (c.getCount() == 0)
+            return null;
+        c.moveToNext();
+        String ret = c.getString(c.getColumnIndex("note"));
+        c.close();
+        return ret;
     }
 
-
+    public String getAllNotes() {
+        noteDB = noteHelper.getWritableDatabase();
+        String query = "SELECT * FROM notes";
+        Cursor c = noteDB.rawQuery(query, null);
+        String titles = "";
+        while (c.moveToNext()) {
+            titles += ", " + c.getString(c.getColumnIndex("title"));
+        }
+        c.close();
+        noteDB.close();
+        return titles;
+    }
 
     public Note getNoteYes(long ID){
         int index=0;

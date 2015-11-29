@@ -35,6 +35,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         btnSpeak.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                say("Please say a command.");
                 promptSpeechInput();
             }
         });

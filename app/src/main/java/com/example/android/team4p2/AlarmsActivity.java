@@ -16,7 +16,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -34,6 +33,8 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
     private String available_commands = "";
     private static final String[] commands = {"make", "help", "delete"};
     private String CURRENT_PROCESS = "DEFAULT";
+
+    public static final String TONE_COUNT = "TONE_COUNT";
 
     PendingIntent pi;
     BroadcastReceiver br;
@@ -76,9 +77,8 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
             command = "help";
         switch (command) {
             case "delete": {
-                CURRENT_PROCESS = "contact-delete-name";
-                say("Please say the name of the contact.");
-                promptSpeechInput();
+                CURRENT_PROCESS = "alarm-delete";
+                nextProcess();
                 break;
             }
             case "ERROR": {
@@ -133,6 +133,17 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 }
                 break;
             }
+            case "alarm-delete": {
+                if (text.equalsIgnoreCase("cancel")) {
+                    CURRENT_PROCESS = "DEFAULT";
+                    say("Cancelling.");
+                } else {
+                    CURRENT_PROCESS = "DEFAULT";
+                    deleteAlarm();
+                    say("Successfully deleted alarm.");
+                }
+                break;
+            }
             default: {
                 handleCommand();
                 break;
@@ -172,6 +183,10 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
 
         AlarmManager.AlarmClockInfo alarm_info = new AlarmManager.AlarmClockInfo(final_time, pi);
         am.setAlarmClock(alarm_info, pi);
+    }
+
+    private void deleteAlarm() {
+        am.cancel(pi);
     }
 
     private int getHour(String date) {

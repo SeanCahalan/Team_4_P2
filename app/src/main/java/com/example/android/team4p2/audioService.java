@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.Vibrator;
 import android.util.Log;
 
 import java.io.IOException;
@@ -55,8 +56,18 @@ public class audioService extends Service implements MediaPlayer.OnPreparedListe
     }
 
     public void onPrepared(MediaPlayer player) {
-        player.start();
-        while(mp.isPlaying()){}
-        mp.release();
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator.hasVibrator()) {
+            long[] pattern = {125, 125, 0, 72, 0, 73, 72, 533, 73, 125, 0, 72, 0, 73, 72, 585};
+            for (int i = 0; i < pattern.length; i++) {
+                pattern[i] *= 4;
+            }
+            vibrator.vibrate(pattern, -1);
+            mp.release();
+        } else {
+            player.start();
+            while(mp.isPlaying()){}
+            mp.release();
+        }
     }
 }

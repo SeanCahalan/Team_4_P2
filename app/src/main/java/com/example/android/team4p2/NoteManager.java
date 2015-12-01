@@ -13,8 +13,6 @@ public class NoteManager {
     private SQLiteOpenHelper noteHelper;
     private SQLiteDatabase noteDB;
 
-    //array that maps id to tags
-
     public NoteManager(Context context){
         noteHelper = new MyDataHelper(context);
     }
@@ -42,29 +40,6 @@ public class NoteManager {
         c.close();
         noteDB.close();
         return titles;
-    }
-
-    public Note getNoteYes(long ID){
-        int index=0;
-        List<Note> notes = new ArrayList<Note>();
-        noteDB = noteHelper.getReadableDatabase();
-        Cursor noteCursor = noteDB.query(MyDataHelper.DBItem.TABLE,
-                null, null, null, null, null, null);
-        while(noteCursor.moveToNext()){
-            int newID = noteCursor.getInt(
-                    noteCursor.getColumnIndexOrThrow(MyDataHelper.DBItem._ID));
-            String newText = noteCursor.getString(
-                    noteCursor.getColumnIndexOrThrow(MyDataHelper.DBItem.NOTE_COL));
-            Note newNote = new Note();
-            newNote.setNoteID(newID);
-            newNote.setNoteText(newText);
-            notes.add(newNote);
-            if(newID == (int)ID)
-                index = notes.indexOf(newNote);
-        }
-        noteCursor.close();
-        noteDB.close();
-        return notes.get(index);
     }
 
     public List<Note> getNotes(){

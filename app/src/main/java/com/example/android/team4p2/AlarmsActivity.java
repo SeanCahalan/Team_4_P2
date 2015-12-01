@@ -123,12 +123,17 @@ public class AlarmsActivity extends AppCompatActivity implements TextToSpeech.On
                 if (text.equalsIgnoreCase("cancel")) {
                     say("Cancelling.");
                     CURRENT_PROCESS = "DEFAULT";
+                } else if (Pattern.matches("\\d?\\d\\s[ap].m.", text.toLowerCase())) {
+                    CURRENT_PROCESS = "alarm-make";
+                    String[] splitText = text.split(" ");
+                    text = splitText[0] + ":00 " + splitText[1];
+                    nextProcess();
                 } else if (Pattern.matches("\\d?\\d:\\d\\d\\s[ap].m.", text.toLowerCase())) {
                     CURRENT_PROCESS = "DEFAULT";
                     addAlarm();
                     say("Successfully added your alarm for " + text);
                 } else {
-                    say("That is not a valid time. Remember to specify A.M. or P.M. Please try again.");
+                    say("That is not a valid time. Remember to specify AM or PM. Please try again.");
                     promptSpeechInput();
                 }
                 break;

@@ -100,13 +100,20 @@ public class NoteManager {
         return added;
     }
 
-    public int deleteNote(long noteID){
+    public Boolean deleteNote(String text){
         noteDB = noteHelper.getWritableDatabase();
-        String[] params = {""+noteID};
-        int deleted = noteDB.delete(MyDataHelper.DBItem.TABLE, MyDataHelper.DBItem._ID+" = ?", params);
-        noteDB.close();
-        return deleted;
+        String query = "SELECT * FROM notes WHERE title = '" + text + "'";
+        Cursor c = noteDB.rawQuery(query, null);
+        long id;
+        if (c.getCount() > 0) {
+            c.moveToNext();
+            id = c.getLong(c.getColumnIndex(MyDataHelper.DBItem._ID));
+            String[] params = {""+id};
+            int deleted = noteDB.delete(MyDataHelper.DBItem.TABLE, MyDataHelper.DBItem._ID+" = ?", params);
+            noteDB.close();
+            return deleted > 0;
+        } else {
+            return false;
+        }
     }
-
-
 }

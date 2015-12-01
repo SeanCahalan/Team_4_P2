@@ -139,6 +139,7 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 break;
             }
             case "note-listen": {
+                CURRENT_PROCESS = "DEFAULT";
                 String result = noteMan.getTheDamnNote(text);
                 if (result == null) {
                     say("The note " + text + " is not in the database.");
@@ -178,8 +179,11 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
             }
             case "note-delete-title": {
                 CURRENT_PROCESS = "DEFAULT";
-                deleteNote(text);
-                say("Deleted " + text + " from contacts.");
+                if (deleteNote(text)) {
+                    say("Deleted " + text + " from notes.");
+                } else {
+                    say("Could not delete note " + text + ".");
+                }
                 break;
             }
             default: {
@@ -253,7 +257,7 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
         inputNote.setNoteID(addedID);
     }
 
-    public void deleteNote(String tag){
-        int noteDeleted = noteMan.deleteNote(2);
+    public Boolean deleteNote(String tag){
+        return noteMan.deleteNote(tag);
     }
 }

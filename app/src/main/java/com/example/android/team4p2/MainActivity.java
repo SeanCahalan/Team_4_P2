@@ -117,6 +117,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         keywordMap.put("yes", "yes");
         keywordMap.put("list", "list");
         keywordMap.put("listen", "listen");
+        keywordMap.put("done", "done");
     }
 
     private static final String[] categories = {"contact", "note", "alarm"};

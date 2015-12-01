@@ -160,13 +160,13 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 } else if (command.equalsIgnoreCase("done")) {
                     CURRENT_PROCESS = "add-note";
                     nextProcess();
-                } else if (command.equalsIgnoreCase("add")) {
+                } else if (command.equalsIgnoreCase("make")) {
                     CURRENT_PROCESS = "note-add-content";
                     say("Please say the content to be added.");
                     promptSpeechInput();
                 } else {
                     CURRENT_PROCESS = "additional-content";
-                    say("That command was not valid. Please say \"done\" or \"add.\"");
+                    say("That command was not valid. Please say \"yes\", \"no\", \"done\" or \"add.\"");
                     promptSpeechInput();
                 }
                 break;

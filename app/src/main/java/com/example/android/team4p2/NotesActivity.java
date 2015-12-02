@@ -133,9 +133,9 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
             }
             case "note-content": {
                 note_content = text;
-                CURRENT_PROCESS = "additional-content";
-                say("Would you like to add additional information?");
-                promptSpeechInput();
+                CURRENT_PROCESS = "DEFAULT"; // Set the next process
+                addNote(note_tag, note_content);
+                say("Successfully added " + note_tag + " to notes.");
                 break;
             }
             case "note-listen": {
@@ -148,6 +148,7 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 }
                 break;
             }
+            /*
             case "additional-content": {
                 String command = MainActivity.normalizeCommand(text);
                 if (command.equalsIgnoreCase("no")) {
@@ -171,12 +172,14 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
                 }
                 break;
             }
+
             case "add-note": {
                 CURRENT_PROCESS = "DEFAULT"; // Set the next process
                 addNote(note_tag, note_content);
                 say("Successfully added " + note_tag + " to notes.");
                 break;
             }
+            */
             case "note-delete-title": {
                 CURRENT_PROCESS = "DEFAULT";
                 if (deleteNote(text)) {

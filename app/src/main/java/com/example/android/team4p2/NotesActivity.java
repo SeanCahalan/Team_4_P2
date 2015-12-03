@@ -95,16 +95,20 @@ public class NotesActivity extends AppCompatActivity implements TextToSpeech.OnI
             }
             case "list": {
                 CURRENT_PROCESS = "DEFAULT";
-                say("The notes are " + noteMan.getAllNotes() + ".");
-//                say("This is not implemented yet.");
+                String result = noteMan.getAllNotes();
+                if (result.equals("NULL")) {
+                    say("You don't have any notes yet.");
+                } else {
+                    say("The notes are " + result + ".");
+                }
                 break;
             }
         }
     }
 
-    /**
+    /*
      * Receiving speech input
-     **/
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

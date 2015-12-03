@@ -34,6 +34,9 @@ public class NoteManager {
         String query = "SELECT * FROM notes";
         Cursor c = noteDB.rawQuery(query, null);
         String titles = "";
+        if (c.getCount() <= 0) {
+            return "NULL";
+        }
         while (c.moveToNext()) {
             titles += ", " + c.getString(c.getColumnIndex("title"));
         }
@@ -85,6 +88,7 @@ public class NoteManager {
             id = c.getLong(c.getColumnIndex(MyDataHelper.DBItem._ID));
             String[] params = {""+id};
             int deleted = noteDB.delete(MyDataHelper.DBItem.TABLE, MyDataHelper.DBItem._ID+" = ?", params);
+            c.close();
             noteDB.close();
             return deleted > 0;
         } else {

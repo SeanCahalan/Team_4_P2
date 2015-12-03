@@ -100,6 +100,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         keywordMap.put("note", "note");
         keywordMap.put("notes", "note");
         keywordMap.put("alarm", "alarm");
+        keywordMap.put("alarms", "alarm");
         keywordMap.put("help", "help");
         keywordMap.put("delete", "delete");
         keywordMap.put("remove", "delete");
